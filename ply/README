@@ -1,0 +1,11 @@
+Para instalar ply (en mac):
+sudo easy_install ply 
+
+Para ejecutar:
+1) python drawy.py
+2) En la consola va a salir 
+   patito < ‘(poner prueba como string)’
+
+NOTA: poner entre ‘’ porque las pruebas usan “.
+
+Hay que cambiar para que sea un archivo lo de entrada y un string
