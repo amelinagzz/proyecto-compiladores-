@@ -1,4 +1,11 @@
 
+import sys
+import ply.lex as lex
+import ply.yacc as yacc
+
+success = 1
+aux_pos = 0;
+
 tokens = ['CTE_N','CTE_T', 'ID', 'CORIZQ', 'CORDER',
           'PARENIZQ', 'PARENDER', 'POR', 'MAS',
           'PUNTOYCOMA', 'DIG', 'IGUALIGUAL', 'NOIGUAL',
@@ -6,38 +13,39 @@ tokens = ['CTE_N','CTE_T', 'ID', 'CORIZQ', 'CORDER',
           'MENORQUE', 'COMA']
 
 reservados = {
-    'and'       : 'AND',
-    'black'     : 'BLACK',
-    'call'      : 'CALL',
-    'circle'    : 'CIRCLE',
-    'color'     : 'COLOR',
-    'darkblue'  : 'DARKBLUE',
-    'draw'      : 'DRAW', 
-    'ellipse'   : 'ELLIPSE',
-    'else'      : 'ELSE',
-    'end'       : 'END',
-    'fucsia'    : 'FUCSIA',
-    'get'       : 'GET',
-    'green'     : 'GREEN',
-    'if'        : 'IF',
-    'lightblue' : 'LIGHTBLUE',
-    'line'      : 'LINE',
-    'list'      : 'LIST',
-    'number'    : 'NUMBER',
-    'or'        : 'OR',
-    'orange'    : 'ORANGE',
-    'point'     : 'POINT',
-    'procedure' : 'PROCEDURE',
-    'program'   : 'PROGRAM',
-    'purple'    : 'PURPLE',
-    'red'       : 'RED',
-    'repeat'    : 'REPEAT',
-    'set'       : 'SET',
-    'start'     : 'START',
-    'text'      : 'TEXT',
-    'width'     : 'WIDTH',
-    'write'     : 'WRITE',
-    'yellow'    : 'YELLOW',
+  'and'       : 'AND',
+  'arc'       : 'ARC',
+  'black'     : 'BLACK',
+  'call'      : 'CALL',
+  'circle'    : 'CIRCLE',
+  'color'     : 'COLOR',
+  'darkblue'  : 'DARKBLUE',
+  'draw'      : 'DRAW', 
+  'ellipse'   : 'ELLIPSE',
+  'else'      : 'ELSE',
+  'end'       : 'END',
+  'fucsia'    : 'FUCSIA',
+  'get'       : 'GET',
+  'green'     : 'GREEN',
+  'if'        : 'IF',
+  'lightblue' : 'LIGHTBLUE',
+  'line'      : 'LINE',
+  'list'      : 'LIST',
+  'number'    : 'NUMBER',
+  'or'        : 'OR',
+  'orange'    : 'ORANGE',
+  'point'     : 'POINT',
+  'procedure' : 'PROCEDURE',
+  'program'   : 'PROGRAM',
+  'purple'    : 'PURPLE',
+  'red'       : 'RED',
+  'repeat'    : 'REPEAT',
+  'set'       : 'SET',
+  'start'     : 'START',
+  'text'      : 'TEXT',
+  'width'     : 'WIDTH',
+  'write'     : 'WRITE',
+  'yellow'    : 'YELLOW',
 }
 tokens += reservados.values()
 
@@ -63,217 +71,227 @@ t_MAYORQUE    = r'>'
 t_ignore = " \t"
 
 def t_ID(t):
-    r'[a-zA-Z_][a-zA-Z0-9_]*'
-    if t.value in reservados:
-        t.type = reservados[ t.value ]
-    return t
+  r'[a-zA-Z_][a-zA-Z0-9_]*'
+  if t.value in reservados:
+    t.type = reservados[ t.value ]
+  return t
     
 def t_error(t):
-    print("Character ilegal'%s'" % t.value[0])
-    t.lexer.skip(1)
-    
-# Build the lexer
-import ply.lex as lex
-lex.lex()
+  global aux_pos
+  print("%s:%d:%d Error Ilegal Character %s" % (sys.argv[1], t.lexer.lineno, (t.lexer.lexpos - aux_pos), t.value[0]))
+  t.lexer.skip(1)
 
+# Define a rule so we can track line numbers
+def t_newline(t):
+  r'\n+'
+  t.lexer.lineno += len(t.value)
+  global aux_pos
+  aux_pos = t.lexer.lexpos
+
+# Gramaticas 
 def p_Programa(t):
-    '''Programa   : PROGRAM ID Vars Programa1 Start END'''
+  '''Programa   : PROGRAM ID Vars Programa1 Start END'''
 
 def p_Programa1(t):
-    '''Programa1  : 
-                  | Procedure Programa1'''
+  '''Programa1  : 
+                | Procedure Programa1'''
 
 def p_Var(t):
-    '''Var        : Type ID Var1 Var2'''
+  '''Var        : Type ID Var1 Var2'''
 
 def p_Var1(t): 
-    '''Var1      : 
-                  | COMA ID Var1'''
+  '''Var1      : 
+               | COMA ID Var1'''
 
 def p_Var2(t):
-    '''Var2       : IGUAL Ctvar'''
+  '''Var2       : IGUAL Ctvar'''
 
 def p_List(t):
-    '''List       : LIST Type ID IGUAL CORIZQ DIG CORDER'''
+  '''List       : LIST Type ID IGUAL CORIZQ DIG CORDER'''
 
 def p_Type(t):
-    '''Type       : TEXT
-                  | NUMBER'''
+  '''Type       : TEXT
+                | NUMBER'''
 
 def p_Procedure(t):
-    '''Procedure  : PROCEDURE ID PARENIZQ Procedure1 PARENDER Vars Statement END'''
+  '''Procedure  : PROCEDURE ID PARENIZQ Procedure1 PARENDER Vars Statement END'''
 
 def p_Procedure1(t):
-    '''Procedure1 : 
-                  | Type ID Procedure2'''
+  '''Procedure1 : 
+                | Type ID Procedure2'''
 
 def p_Procedure2(t):
-    '''Procedure2 : 
-                  | COMA Type ID Procedure2'''
+  '''Procedure2 : 
+                | COMA Type ID Procedure2'''
 
 def p_Start(t):
-    '''Start      : START Vars Statement END'''
+  '''Start      : START Vars Statement END'''
 
 def p_Vars(t):
-    '''Vars       : 
-                  | Var Vars
-                  | List Vars'''
+  '''Vars       : 
+                | Var Vars
+                | List Vars'''
 
 def p_Statement(t):
-    '''Statement  : 
-                  | Repeat
-                  | Condition
-                  | Assignment
-                  | Get
-                  | Write
-                  | Call
-                  | Set
-                  | Draw'''
+  '''Statement  : 
+                | Repeat
+                | Condition
+                | Assignment
+                | Get
+                | Write
+                | Call
+                | Set
+                | Draw'''
 
 def p_Set(t):
-    '''Set        : SET Color
-                  | SET Width'''
+  '''Set        : SET Color
+                | SET Width'''
 
 def p_Width(t):
-    '''Width      : WIDTH PARENIZQ DIG PARENDER PUNTOYCOMA'''
+  '''Width      : WIDTH PARENIZQ DIG PARENDER PUNTOYCOMA'''
 
 def p_Color(t):
-    '''Color      : COLOR PARENIZQ Varcolor PARENDER PUNTOYCOMA'''
+  '''Color      : COLOR PARENIZQ Varcolor PARENDER PUNTOYCOMA'''
 
 def p_Varcolor(t):
-    '''Varcolor   : DARKBLUE
-                  | LIGHTBLUE
-                  | PURPLE
-                  | ORANGE
-                  | RED
-                  | GREEN
-                  | BLACK
-                  | YELLOW
-                  | FUCSIA'''
+  '''Varcolor   : DARKBLUE
+                | LIGHTBLUE
+                | PURPLE
+                | ORANGE
+                | RED
+                | GREEN
+                | BLACK
+                | YELLOW
+                | FUCSIA'''
 
 def p_Draw(t):
-    '''Draw       : DRAW Draw1'''
+  '''Draw       : DRAW Draw1'''
 
 def p_Draw1(t):
-    '''Draw1      : Point
-                  | Line
-                  | Ellipse
-                  | Circle'''
+  '''Draw1      : Point
+                | Line
+                | Ellipse
+                | Circle
+                | Arc'''
 
 def p_Point(t):
-    '''Point      : POINT PARENIZQ Ctvar COMA Ctvar PARENDER PUNTOYCOMA'''
+  '''Point      : POINT PARENIZQ Exp COMA Exp PARENDER PUNTOYCOMA'''
 
 def p_Line(t):
-    '''Line       : LINE PARENIZQ Ctvar COMA Ctvar COMA Ctvar COMA Ctvar PARENDER PUNTOYCOMA'''
+  '''Line       : LINE PARENIZQ Exp COMA Exp COMA Exp COMA Exp PARENDER PUNTOYCOMA'''
 
 def p_Circle(t):
-    '''Circle     : CIRCLE PARENIZQ Ctvar COMA Ctvar COMA Ctvar PARENDER PUNTOYCOMA'''
+  '''Circle     : CIRCLE PARENIZQ Exp COMA Exp COMA Exp PARENDER PUNTOYCOMA'''
 
 def p_Ellipse(t):
-    '''Ellipse    : ELLIPSE PARENIZQ Ctvar COMA Ctvar COMA Ctvar COMA Ctvar PARENDER PUNTOYCOMA'''
+  '''Ellipse    : ELLIPSE PARENIZQ Exp COMA Exp COMA Exp COMA Exp PARENDER PUNTOYCOMA'''
+
+def p_Arc(t):
+  '''Arc    : ARC PARENIZQ Exp COMA Exp PARENDER PUNTOYCOMA'''
 
 def p_Write(t):
-    '''Write      : WRITE PARENIZQ Ctvar PARENDER PUNTOYCOMA'''
+  '''Write      : WRITE PARENIZQ Exp PARENDER PUNTOYCOMA'''
 
 def p_Get(t): 
-    '''Get        : GET PARENIZQ Ctvar PARENDER PUNTOYCOMA'''
+  '''Get        : GET PARENIZQ ID PARENDER PUNTOYCOMA'''
 
 def p_Assignment(t): 
-    '''Assignment : ID Assignment1 IGUAL Exp4 PUNTOYCOMA'''
+  '''Assignment : ID Assignment1 IGUAL Exp4 PUNTOYCOMA'''
 
 def p_Assignment1(t):
-    '''Assignment1 : 
-                   | CORIZQ DIG CORDER'''
+  '''Assignment1 : 
+                 | CORIZQ DIG CORDER'''
 
 def p_Condition(t):
-    '''Condition   : IF PARENIZQ Exp PARENDER Statement Condition1 END'''
+  '''Condition   : IF PARENIZQ Exp PARENDER Statement Condition1 END'''
 
 def p_Condition1(t):
-    '''Condition1  : ELSE Statement'''
+  '''Condition1  : ELSE Statement'''
 
 def p_Repeat(t):
-    '''Repeat      : REPEAT PARENIZQ Exp PARENDER Statement END'''
+  '''Repeat      : REPEAT PARENIZQ Exp PARENDER Statement END'''
 
 def p_Call(t):
-    '''Call        : CALL ID PARENIZQ Ctvar Call1 PARENDER PUNTOYCOMA'''
+  '''Call        : CALL ID PARENIZQ Exp Call1 PARENDER PUNTOYCOMA'''
 
 def p_Call1(t):
-    '''Call1       : 
-                   | COMA Ctvar Call1'''
+  '''Call1       : 
+                 | COMA Exp Call1'''
 
 def p_Ctvar(t):
-    '''Ctvar       : Ctvar1 CTE_N
-                   | CTE_T
-                   | ID Ctvar2'''
+  '''Ctvar       : Ctvar1 CTE_N
+                 | CTE_T
+                 | ID Ctvar2'''
 
 def p_Ctvar1(t):
-    '''Ctvar1      : 
-                   | MENOS'''
+  '''Ctvar1      : 
+                 | MENOS'''
 
 def p_Ctvar2(t):
-    '''Ctvar2      :
-                   | CORIZQ DIG CORDER'''
+  '''Ctvar2      :
+                 | CORIZQ DIG CORDER'''
 
 def p_Exp(t):
-    '''Exp         : Exp2 Exp1'''
+  '''Exp         : Exp2 Exp1'''
 
 def p_Exp1(t):
-    '''Exp1        : 
-                   | OR Exp2 Exp1''' 
+  '''Exp1        : 
+                 | OR Exp2 Exp1''' 
 
 def p_Exp2(t):
-    '''Exp2        : Exp3 Exp21'''
+  '''Exp2        : Exp3 Exp21'''
 
 def p_Exp21(t):
-    '''Exp21       : 
-                   | AND Exp3 Exp21'''
+  '''Exp21       : 
+                 | AND Exp3 Exp21'''
 
 def p_Exp3(t):
-    '''Exp3        : Exp4 Exp31'''
+  '''Exp3        : Exp4 Exp31'''
 
 def p_Exp31(t):
-    '''Exp31       : 
-                   | IGUALIGUAL Exp4
-                   | NOIGUAL Exp4
-                   | MAYORQUE Exp4
-                   | MENORQUE Exp4'''
+  '''Exp31       : 
+                 | IGUALIGUAL Exp4
+                 | NOIGUAL Exp4
+                 | MAYORQUE Exp4
+                 | MENORQUE Exp4'''
 
 def p_Exp4(t):
-    '''Exp4        : Term Exp41'''
+  '''Exp4        : Term Exp41'''
 
 def p_Exp41(t):
-    '''Exp41       : 
-                   | MAS Exp41
-                   | MENOS Exp41'''
+  '''Exp41       : 
+                 | MAS Exp41
+                 | MENOS Exp41'''
 
 def p_Term(t):
-    '''Term        : Factor Term1'''
+  '''Term        : Factor Term1'''
 
 def p_Term1(t):
-    '''Term1       : 
-                   | POR Term1
-                   | ENTRE Term1'''                                                                             
+  '''Term1       : 
+                 | POR Term1
+                 | ENTRE Term1'''                                                                             
 
 def p_Factor(t):
-    '''Factor      : PARENIZQ Exp PARENDER
-                   | Ctvar'''  
+  '''Factor      : PARENIZQ Exp PARENDER
+                 | Ctvar'''  
 
 
 def p_error(t):
-    global success
-    success = 0
-    print("Error de sintaxis '%s'" % t.value)
+  global success
+  success = 0
+  print("Error de sintaxis '%s'" % t.value)
 
-import ply.yacc as yacc
+lex.lex()
 yacc.yacc()
 
-success = 1
+try:
+  print ("Filename: %s" % str(sys.argv[1]))
+  f = open(sys.argv[1], 'r')
+  s = f.read()
+except EOFError:
+  print ("Hubo un error al leer el archivo")
 
-while 1:
-    try:
-        s = input('input > ')   # Use raw_input on Python 2
-    except EOFError:
-        break
-    yacc.parse(s)
-    if (success):
-        print "Todo bien :D"
+yacc.parse(s)
+
+if (success):
+  print "Todo bien :D"
